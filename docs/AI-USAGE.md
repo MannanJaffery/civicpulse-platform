@@ -28,6 +28,19 @@ This document records the transparent attribution of AI tools used throughout th
   - Verified non-root container users (`appuser`) and pinned image versions.
   - Verified `needs:` chaining and immutable SHA tagging in CI/CD.
 
+### Phase 2: CI/CD & Static Analysis Remediation
+- **Tool Used**: Antigravity IDE (Gemini 3.7 Flash)
+- **Prompt Summary**: "Fix all current GitHub CI/CD failures without changing application behavior: Backend Ruff linting and import formatting, unused import cleanup, whitespace cleanup, GHCR image lowercase repository naming in CD and Release workflows, and document fixes."
+- **Generated Code / Fixes**:
+  - Ran Ruff linter and formatter to standardize import ordering across `alembic/`, `app/`, and `tests/`.
+  - Removed unused imports (`json`, `Category`, `Priority`, `Response`, `timezone`, `SimulatedTriage`).
+  - Stripped whitespace-only blank lines.
+  - Updated `.github/workflows/cd.yml` and `.github/workflows/release.yml` with dynamic lowercase repository name conversion steps for GHCR compliance.
+- **Human Review & Modifications**:
+  - Verified `ruff check backend/` exits with code 0 (0 errors).
+  - Verified `ruff format backend/ --check` exits with code 0 (all files properly formatted).
+  - Verified GHCR lowercase naming convention handles arbitrary GitHub username capitalization.
+
 ---
 
 ## 3. Defense Rationale & Ownership

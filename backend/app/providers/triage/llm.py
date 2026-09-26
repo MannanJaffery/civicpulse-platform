@@ -1,7 +1,7 @@
-import os
-import json
 import logging
-from app.providers.triage.base import Category, Priority, TriageProvider, TriageResult
+import os
+
+from app.providers.triage.base import TriageProvider, TriageResult
 from app.providers.triage.rules import RuleBasedTriage
 
 logger = logging.getLogger(__name__)

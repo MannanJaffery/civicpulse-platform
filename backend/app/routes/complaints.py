@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query, Response, status
+
+from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from app.providers.triage.base import Category, Priority
@@ -50,7 +51,7 @@ VALID_TRANSITIONS = {
 def create_complaint(payload: ComplaintCreate):
     provider = get_triage_provider()
     start_time = datetime.now(timezone.utc)
-    
+
     triage_res = provider.triage(payload.text, payload.location)
     latency_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
 

@@ -1,0 +1,250 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-type:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Ruff Linter
+        run: |
+          cd backend
+          ruff check app/
+
+      - name: Run Mypy Type Checker
+        run: |
+          cd backend
+          mypy app/
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: frontend/package.json
+
+      - name: Install Frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run TypeScript Compiler Check
+        run: |
+          cd frontend
+          npx tsc --noEmit
+
+  test-backend:
+    name: Backend Tests (Deterministic)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Pytest with Coverage
+        env:
+          TRIAGE_PROVIDER: simulated
+          ENVIRONMENT: test
+        run: |
+          cd backend
+          pytest --cov=app --cov-report=term --cov-report=xml --cov-fail-under=65
+
+  test-frontend:
+    name: Frontend Component Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: frontend/package.json
+
+      - name: Install Frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run Vitest
+        run: |
+          cd frontend
+          npm test -- --run
+
+  build:
+    name: Build Container Images (No Push)
+    runs-on: ubuntu-latest
+    needs: [lint-and-type, test-backend, test-frontend]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          tags: civicpulse-backend:local
+          load: true
+
+      - name: Build Frontend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: false
+          tags: civicpulse-frontend:local
+          load: true
+
+  scan:
+    name: Trivy Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend for Scanning
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          tags: civicpulse-backend:scan
+          load: true
+
+      - name: Build Frontend for Scanning
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: false
+          tags: civicpulse-frontend:scan
+          load: true
+
+      - name: Run Trivy on Backend Image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: civicpulse-backend:scan
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+
+      - name: Run Trivy on Frontend Image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: civicpulse-frontend:scan
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+
+  manifests:
+    name: Validate Kubernetes Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Kustomize & Kubeconform
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+          
+          curl -L -s https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Build and Validate Production Manifests
+        run: |
+          kustomize build k8s/overlays/prod | kubeconform -strict -summary -ignore-missing-schemas -kubernetes-version 1.30.0
+
+  integration:
+    name: Docker Compose Integration Smoke Test
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Compose
+        run: |
+          cp .env.example .env
+          docker compose up -d
+
+      - name: Wait for Backend Readiness Probe
+        run: |
+          echo "Waiting for backend readiness probe..."
+          for i in {1..30}; do
+            if curl -s -f http://localhost:8000/ready; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Waiting ($i/30)..."
+            sleep 2
+          done
+
+      - name: Execute End-to-End Smoke Test
+        run: |
+          # 1. Submit a complaint
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST http://localhost:8000/api/complaints \
+            -H "Content-Type: application/json" \
+            -d '{"text": "Burst water main flooding Street 12 since morning.", "location": "Street 12, West Zone", "reporter_contact": "citizen@example.com"}')
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          echo "POST Response Code: $HTTP_CODE"
+          echo "POST Body: $BODY"
+
+          # 2. Check stats endpoint and cache headers
+          STATS_1=$(curl -s -i http://localhost:8000/api/stats)
+          echo "$STATS_1" | grep -i "X-Cache" || true
+
+          STATS_2=$(curl -s -i http://localhost:8000/api/stats)
+          echo "$STATS_2" | grep -i "X-Cache" || true
+
+      - name: Teardown Compose Stack
+        if: always()
+        run: |
+          docker compose down -v

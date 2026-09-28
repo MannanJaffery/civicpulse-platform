@@ -1,9 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import 'react-quill-new/dist/quill.snow.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Custom styling for Quill Editor */
+.quill-wrapper .ql-toolbar.ql-snow {
+  border: 1px solid #e2e8f0;
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
+  background-color: #f8fafc;
+  padding: 8px 12px;
+}
+
+.quill-wrapper .ql-container.ql-snow {
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  min-height: 140px;
+  background: #ffffff;
+}
+
+.quill-wrapper .ql-editor {
+  min-height: 140px;
+  font-family: inherit;
+  color: #1e293b;
+}
+
+.quill-wrapper .ql-editor.ql-blank::before {
+  color: #94a3b8;
+  font-style: normal;
+  font-size: 0.9rem;
+}
+
+/* Glassmorphism helpers */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(51, 65, 85, 0.6);
 }

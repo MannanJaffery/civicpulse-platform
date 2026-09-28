@@ -8,7 +8,6 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
-from app.models import ComplaintModel
 from app.providers.cache.redis_client import get_redis_client
 from app.providers.triage.base import Category, Priority, TriageResult
 from app.providers.triage.factory import get_triage_provider

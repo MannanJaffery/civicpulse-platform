@@ -41,6 +41,25 @@ This document records the transparent attribution of AI tools used throughout th
   - Verified `ruff format backend/ --check` exits with code 0 (all files properly formatted).
   - Verified GHCR lowercase naming convention handles arbitrary GitHub username capitalization.
 
+### Phase 3: Backend & PostgreSQL Data Layer Implementation
+- **Tool Used**: Antigravity IDE (Gemini 3.7 Flash)
+- **Prompt Summary**: "Complete the backend with 4-layer architecture, PostgreSQL persistence via Alembic, Redis dual-role caching & distributed rate limiting, Groq LLM triage with retries/timeouts/guardrails, all 10 API endpoints, idempotent seed dataset (32 complaints), Prometheus metrics, and comprehensive tests."
+- **Generated Code / Fixes**:
+  - `app/config.py`, `app/db.py`, `app/models.py` (SQLAlchemy 2.0 ORM with check constraints, composite index `(status, priority)` and `created_at`).
+  - `app/repositories/complaint_repository.py` (encapsulating all SQL queries).
+  - `alembic/versions/0001_initial_schema.py` (versioned zero-DDL migration).
+  - `app/providers/cache/redis_client.py` (stats caching, rate limiting, and content-hash caching).
+  - `app/providers/triage/llm.py` (Groq API integration, 10s timeout, jittered retry, prompt-injection defense).
+  - `app/services/complaint_service.py` and `app/services/stats_service.py` (business rules, state machine, and cache invalidation on write).
+  - `app/routes/complaints.py`, `app/routes/stats.py`, `app/routes/meta.py`, and `app/main.py` (all 10 endpoints, liveness/readiness probes, metrics).
+  - `app/seed.py` (idempotent loader with 32 realistic Urdu-English complaints).
+  - `tests/` (22 unit & integration tests achieving 77% coverage).
+- **Human Review & Modifications**:
+  - Verified zero SQL outside the repository layer.
+  - Verified explicit state machine transition table (409 Conflict on invalid transitions).
+  - Verified `/health` does not touch database, `/ready` checks DB + cache.
+  - Verified 22/22 tests passing with 77% coverage.
+
 ---
 
 ## 3. Defense Rationale & Ownership

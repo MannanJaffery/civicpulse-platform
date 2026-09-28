@@ -1,1 +1,3 @@
-"""Repositories layer for persistence and SQL access."""
+from app.repositories.complaint_repository import ComplaintRepository
+
+__all__ = ["ComplaintRepository"]

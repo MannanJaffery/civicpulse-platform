@@ -162,7 +162,7 @@ jobs:
           load: true
 
       - name: Run Trivy on Backend Image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: civicpulse-backend:scan
           format: table
@@ -172,7 +172,7 @@ jobs:
           severity: "HIGH,CRITICAL"
 
       - name: Run Trivy on Frontend Image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: civicpulse-frontend:scan
           format: table

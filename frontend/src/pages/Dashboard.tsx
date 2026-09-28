@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertOctagon,
+  Eye,
 } from 'lucide-react';
 import { getComplaints, updateStatus, getStats } from '../api/client';
 import { Complaint, Category, Priority, Status, StatsResponse } from '../types';
@@ -18,6 +19,7 @@ import { MetricCard } from '../components/MetricCard';
 import { ServiceGauge } from '../components/ServiceGauge';
 import { ComplaintsTrendChart } from '../components/ComplaintsTrendChart';
 import { CategoryProgressBar } from '../components/CategoryProgressBar';
+import { ComplaintDetailModal } from '../components/ComplaintDetailModal';
 
 const Dashboard: FC = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -29,6 +31,7 @@ const Dashboard: FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeSidebarView, setActiveSidebarView] = useState('dashboard');
+  const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
   const [filters, setFilters] = useState<{
     category?: Category;
     priority?: Priority;
@@ -49,14 +52,14 @@ const Dashboard: FC = () => {
         getStats(),
       ]);
 
-      if (complaintsRes.status === 'fulfilled') {
-        setComplaints(complaintsRes.value.data);
-        setTotal(complaintsRes.value.total);
-      } else {
-        setError(complaintsRes.reason?.message || 'Failed to load complaints');
+      if (complaintsRes.status === 'fulfilled' && complaintsRes.value) {
+        setComplaints(complaintsRes.value.data || []);
+        setTotal(complaintsRes.value.total || 0);
+      } else if (complaintsRes.status === 'rejected') {
+        setError(complaintsRes.reason?.message || 'Failed to load complaints from backend');
       }
 
-      if (statsRes.status === 'fulfilled') {
+      if (statsRes.status === 'fulfilled' && statsRes.value) {
         setStats(statsRes.value.data);
         setCacheHit(statsRes.value.hit);
       }
@@ -91,10 +94,10 @@ const Dashboard: FC = () => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
-      c.text.toLowerCase().includes(q) ||
-      c.location.toLowerCase().includes(q) ||
-      c.category.toLowerCase().includes(q) ||
-      c.status.toLowerCase().includes(q) ||
+      (c.text && c.text.toLowerCase().includes(q)) ||
+      (c.location && c.location.toLowerCase().includes(q)) ||
+      (c.category && c.category.toLowerCase().includes(q)) ||
+      (c.status && c.status.toLowerCase().includes(q)) ||
       (c.reporter_contact && c.reporter_contact.toLowerCase().includes(q))
     );
   });
@@ -174,6 +177,15 @@ const Dashboard: FC = () => {
               </span>
             )}
 
+            {/* Refresh Button */}
+            <button
+              onClick={fetchData}
+              className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors"
+              title="Refresh Dashboard"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+
             {/* Bell Notifications */}
             <div className="relative cursor-pointer p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors">
               <Bell className="w-4 h-4" />
@@ -235,7 +247,7 @@ const Dashboard: FC = () => {
               iconColor="text-emerald-600"
               title="Pending"
               subtitle="Last 7 days"
-              value={stats?.by_status[Status.open] ?? 9}
+              value={stats?.by_status[Status.open] ?? total}
               badgeText="+70%"
               badgeType="danger"
               accentColor="bg-emerald-500"
@@ -248,7 +260,7 @@ const Dashboard: FC = () => {
               iconColor="text-blue-600"
               title="In Progress"
               subtitle="Last 7 days"
-              value={stats?.by_status[Status.in_progress] ?? 2}
+              value={stats?.by_status[Status.in_progress] ?? 0}
               badgeText="+20%"
               badgeType="info"
               accentColor="bg-blue-500"
@@ -261,7 +273,7 @@ const Dashboard: FC = () => {
               iconColor="text-orange-600"
               title="Solved"
               subtitle="Last 7 days"
-              value={stats?.by_status[Status.resolved] ?? 1}
+              value={stats?.by_status[Status.resolved] ?? 0}
               badgeText="+1%"
               badgeType="success"
               accentColor="bg-orange-400"
@@ -354,7 +366,7 @@ const Dashboard: FC = () => {
                       {displayedComplaints.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-slate-400">
-                            No complaints matching current filter criteria.
+                            {loading ? 'Loading complaints from backend...' : 'No complaints matching current filter criteria.'}
                           </td>
                         </tr>
                       ) : (
@@ -369,7 +381,11 @@ const Dashboard: FC = () => {
                             : 'Just now';
 
                           return (
-                            <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                            <tr
+                              key={c.id}
+                              className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
+                              onClick={() => setSelectedComplaintId(c.id)}
+                            >
                               <td className="py-3 text-slate-500 font-medium whitespace-nowrap">
                                 {dateFormatted}
                               </td>
@@ -398,9 +414,20 @@ const Dashboard: FC = () => {
                                 </span>
                               </td>
                               <td className="py-3 capitalize">{getStatusBadge(c.status)}</td>
-                              <td className="py-3 text-right whitespace-nowrap">
-                                {/* State Machine Transition Triggers */}
+                              <td
+                                className="py-3 text-right whitespace-nowrap"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {/* State Machine Transition Triggers & Detail Inspection */}
                                 <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => setSelectedComplaintId(c.id)}
+                                    className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                    title="View Details"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </button>
+
                                   {c.status === Status.open && (
                                     <>
                                       <button
@@ -486,6 +513,13 @@ const Dashboard: FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Complaint Details Modal */}
+      <ComplaintDetailModal
+        complaintId={selectedComplaintId}
+        onClose={() => setSelectedComplaintId(null)}
+        onStatusUpdated={fetchData}
+      />
     </div>
   );
 };

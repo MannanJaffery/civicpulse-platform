@@ -10,13 +10,13 @@ describe('App Component', () => {
 
   it('renders navigation tabs', () => {
     render(<App />);
-    expect(screen.getByText(/Submit Complaint/i)).toBeDefined();
-    expect(screen.getByText(/Operations Dashboard/i)).toBeDefined();
-    expect(screen.getByText(/Live Stats/i)).toBeDefined();
+    expect(screen.getByRole('button', { name: /Submit Complaint/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Operations Dashboard/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Live Stats/i })).toBeDefined();
   });
 
-  it('renders introductory badge elements', () => {
+  it('renders Submit view by default', () => {
     render(<App />);
-    expect(screen.getByText(/React 18 \+ Vite/i)).toBeDefined();
+    expect(screen.getByLabelText(/Complaint Description/i)).toBeDefined();
   });
 });

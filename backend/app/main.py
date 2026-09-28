@@ -1,12 +1,13 @@
-import os
 import logging
+import os
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes.complaints import router as complaints_router
-from app.routes.stats import router as stats_router
 from app.routes.meta import router as meta_router
+from app.routes.stats import router as stats_router
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
@@ -60,8 +61,8 @@ def metrics():
     """Prometheus text format metric endpoint stub."""
     return Response(
         content="# HELP http_requests_total Total number of HTTP requests\n"
-                "# TYPE http_requests_total counter\n"
-                "http_requests_total 1\n",
+        "# TYPE http_requests_total counter\n"
+        "http_requests_total 1\n",
         media_type="text/plain",
     )
 

@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Protocol
+
 from pydantic import BaseModel, Field
 
 
@@ -28,5 +29,4 @@ class TriageResult(BaseModel):
 class TriageProvider(Protocol):
     name: str
 
-    def triage(self, text: str, location: str) -> TriageResult:
-        ...
+    def triage(self, text: str, location: str) -> TriageResult: ...

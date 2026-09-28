@@ -1,5 +1,6 @@
-import os
 import logging
+import os
+
 from app.providers.triage.base import TriageProvider, TriageResult
 from app.providers.triage.rules import RuleBasedTriage
 

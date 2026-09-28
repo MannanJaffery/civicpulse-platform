@@ -1,4 +1,5 @@
 import hashlib
+
 from app.providers.triage.base import Category, Priority, TriageProvider, TriageResult
 
 

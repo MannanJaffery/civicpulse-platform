@@ -66,13 +66,22 @@ This document answers the eight mandatory engineering questions with precise ref
 
 ---
 
-## 8. The Failure Incident & Resolution
+## 8. Failure Incidents & Resolutions
 
+### Incident A: LLM Provider Unhandled Outage & SQLite UUID Translation
 - **Symptoms**: `pytest tests/test_triage.py` raised unhandled `ConnectionError: Simulated remote LLM outage 503` causing HTTP 500 status on `POST /api/complaints`, and SQLite tests raised `AttributeError: 'int' object has no attribute 'replace'` during seed tests.
 - **Initial Wrong Assumption**: We initially assumed provider-level internal try/except inside `LLMTriage` was sufficient to catch all errors, and that PostgreSQL `UUID` dialect would map transparently to in-memory SQLite during hermetic test runs.
 - **Actual Cause & Fix**:
   1. If an external or injected provider raised an unhandled exception before returning a `TriageResult`, `ComplaintService` did not intercept it. We updated [backend/app/services/complaint_service.py](file:///backend/app/services/complaint_service.py) with a service-level defensive try/except block that catches all provider exceptions, logs a structured `WARNING` with provider metadata, and falls back to `RuleBasedTriage()` with `triaged_by="rules:fallback"`.
   2. For database models, we switched to SQLAlchemy 2.0's universal `Uuid(as_uuid=True)` in [backend/app/models.py](file:///backend/app/models.py), ensuring native PostgreSQL UUID in production and seamless string/binary mapping in SQLite test fixtures.
+
+### Incident B: Container Startup Race & Missing Database Tables (`UndefinedTable: relation "complaints" does not exist`)
+- **Symptoms**: `POST /api/complaints` threw `sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedTable) relation "complaints" does not exist` in Docker Compose logs.
+- **Initial Wrong Assumption**: Assumed the PostgreSQL container volume would inherit pre-migrated schema automatically without an explicit migration runner in the container lifecycle.
+- **Actual Cause & Fix**:
+  1. The backend application started `uvicorn` before Alembic migrations were applied to the newly provisioned PostgreSQL instance. Because CivicPulse strictly prohibits runtime DDL (`Base.metadata.create_all()`), the `complaints` table was absent.
+  2. Implemented [backend/entrypoint.sh](file:///backend/entrypoint.sh) which runs `alembic upgrade head` and idempotent seeding `python -m app.seed` before starting `uvicorn`. Updated [backend/Dockerfile](file:///backend/Dockerfile) to execute via this entrypoint script.
+  3. Added container execution fallback command in [docs/RUNBOOK.md](file:///docs/RUNBOOK.md) for manual migration trigger: `docker compose exec backend alembic upgrade head`.
 
 ---
 

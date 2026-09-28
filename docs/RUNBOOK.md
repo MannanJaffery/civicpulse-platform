@@ -95,3 +95,30 @@ If the primary LLM provider fails (e.g. rate limit 429, timeout > 10s):
 ```bash
 kubectl set env deployment/backend -n civicpulse TRIAGE_PROVIDER=rules
 ```
+
+---
+
+## 6. Database Migration & Missing Relation Troubleshooting (`UndefinedTable`)
+
+### Symptom: `psycopg2.errors.UndefinedTable: relation "complaints" does not exist`
+Occurs when the PostgreSQL container is newly provisioned or volumes are reset, but the database schema migrations have not been applied.
+
+### Automated Resolution (Built-in Entrypoint)
+The container entrypoint [backend/entrypoint.sh](file:///backend/entrypoint.sh) automatically runs `alembic upgrade head` and `python -m app.seed` on container startup before launching `uvicorn`. Rebuilding and restarting containers applies this automatically:
+```bash
+docker compose up -d --build
+```
+
+### Manual Hot-Fix for Running Containers
+If containers are already active and you cannot restart:
+```bash
+# 1. Execute migrations inside running backend container
+docker compose exec backend alembic upgrade head
+
+# 2. Seed default data (optional/recommended)
+docker compose exec backend python -m app.seed
+
+# 3. In Kubernetes:
+kubectl exec -it deployment/backend -n civicpulse -- alembic upgrade head
+```
+

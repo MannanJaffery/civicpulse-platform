@@ -19,7 +19,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { getStats } from '../api/client';
-import { StatsResponse, Category, Priority, Status } from '../types';
+import { StatsResponse, Category, Priority, Status, ProvidersMetaResponse } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -40,7 +40,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 const Stats: FC = () => {
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [cacheHit, setCacheHit] = useState<boolean | null>(null);
-  const [providersMeta, setProvidersMeta] = useState<any | null>(null);
+  const [providersMeta, setProvidersMeta] = useState<ProvidersMetaResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,15 +52,15 @@ const Stats: FC = () => {
       setStats(data);
       setCacheHit(hit);
 
-      // Dynamically attempt meta providers fetch without breaking tests
+      // Dynamically fetch provider metadata safely without breaking partial mocks
       try {
         const clientMod: any = await import('../api/client');
-        if (typeof clientMod.getMetaProviders === 'function') {
+        if (typeof clientMod?.getMetaProviders === 'function') {
           const meta = await clientMod.getMetaProviders();
           setProvidersMeta(meta);
         }
       } catch {
-        // Optional meta info
+        // Optional meta telemetry
       }
     } catch (e: any) {
       setError(e.message || 'Failed to fetch stats');
@@ -88,6 +88,8 @@ const Stats: FC = () => {
         key: prio,
       }))
     : [];
+
+  const outcomesList = providersMeta?.outcomes || (providersMeta as any)?.recent_outcomes || [];
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-8">
@@ -293,7 +295,7 @@ const Stats: FC = () => {
                 </span>
               </div>
 
-              {providersMeta.recent_outcomes && providersMeta.recent_outcomes.length > 0 && (
+              {outcomesList.length > 0 && (
                 <div className="mt-4 overflow-x-auto">
                   <table className="w-full text-xs text-left">
                     <thead>
@@ -301,10 +303,11 @@ const Stats: FC = () => {
                         <th className="py-2">Provider</th>
                         <th className="py-2">Latency (ms)</th>
                         <th className="py-2">Fallback Triggered</th>
+                        <th className="py-2">Timestamp</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800 text-slate-300">
-                      {providersMeta.recent_outcomes.slice(0, 5).map((outcome: any, i: number) => (
+                      {outcomesList.slice(0, 10).map((outcome: any, i: number) => (
                         <tr key={i}>
                           <td className="py-2 font-mono text-cyan-300">{outcome.provider}</td>
                           <td className="py-2 font-mono">{outcome.latency_ms} ms</td>
@@ -314,6 +317,9 @@ const Stats: FC = () => {
                             ) : (
                               <span className="text-emerald-400 font-bold">NO</span>
                             )}
+                          </td>
+                          <td className="py-2 text-slate-400 font-mono">
+                            {outcome.timestamp || 'N/A'}
                           </td>
                         </tr>
                       ))}

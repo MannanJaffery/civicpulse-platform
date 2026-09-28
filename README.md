@@ -64,10 +64,9 @@ docker compose up -d
 | `GET` | `/ready` | Readiness probe (`200` if DB + Redis reachable, `503` if dependency down). |
 | `GET` | `/metrics` | Prometheus metrics (request count, latency histogram, triage latency, fallback counter). |
 
----
-
 ## 4. Documentation Index
 
+- [API Integration Guide](docs/API-INTEGRATION.md)
 - [AI Usage Log](docs/AI-USAGE.md)
 - [Engineering Notes & 8 Core Questions](docs/ENGINEERING-NOTES.md)
 - [Operations Runbook](docs/RUNBOOK.md)

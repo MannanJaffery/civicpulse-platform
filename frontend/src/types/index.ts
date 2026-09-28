@@ -20,6 +20,12 @@ export enum Status {
   rejected = 'rejected',
 }
 
+export interface ComplaintCreateRequest {
+  text: string;
+  location: string;
+  reporter_contact?: string | null;
+}
+
 export interface Complaint {
   id: string;
   text: string;
@@ -35,11 +41,17 @@ export interface Complaint {
   updated_at: string;
 }
 
-export interface TriageResult {
-  category: Category;
-  priority: Priority;
-  summary: string;
-  confidence: number;
+export type ComplaintResponseDTO = Complaint;
+
+export interface PaginatedComplaintsResponse {
+  items: Complaint[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface StatusUpdateRequest {
+  status: Status | string;
 }
 
 export interface StatsResponse {
@@ -49,16 +61,40 @@ export interface StatsResponse {
   by_status: Record<Status, number>;
 }
 
-export interface ApiError {
-  detail: string;
+export type StatsResponseDTO = StatsResponse;
+
+export interface TriageOutcome {
+  provider: string;
+  latency_ms: number;
+  fallback: boolean;
+  timestamp: string;
+}
+
+export interface ProvidersMetaResponse {
+  active_provider: string;
+  outcomes: TriageOutcome[];
+}
+
+export interface HealthResponse {
+  status: string;
+  process: string;
+}
+
+export interface ReadyResponse {
+  status: string;
+  database?: string;
+  cache?: string;
+  failed_dependencies?: string[];
+  detail?: string;
 }
 
 export interface FieldError {
-  loc: (string | number)[];
-  msg: string;
+  field: string;
+  message: string;
   type: string;
 }
 
-export interface ValidationError {
-  detail: FieldError[];
+export interface ApiErrorResponse {
+  detail: string;
+  errors?: FieldError[];
 }

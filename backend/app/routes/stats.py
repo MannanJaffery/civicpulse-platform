@@ -1,43 +1,19 @@
-from fastapi import APIRouter, Response
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, Response
+from sqlalchemy.orm import Session
+
+from app.db import get_db_session
+from app.services.stats_service import StatsResponseDTO, StatsService
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
 
-class CategoryStats(BaseModel):
-    category: str
-    count: int
+@router.get("", response_model=StatsResponseDTO)
+def get_stats(
+    response: Response,
+    db: Session = Depends(get_db_session),
+):
+    service = StatsService(db)
+    stats_dto, is_hit = service.get_stats()
 
-
-class PriorityStats(BaseModel):
-    priority: str
-    count: int
-
-
-class StatsResponse(BaseModel):
-    total_complaints: int
-    by_category: list[CategoryStats]
-    by_priority: list[PriorityStats]
-
-
-@router.get("", response_model=StatsResponse)
-def get_stats(response: Response):
-    # Sets X-Cache header demonstrating cache status
-    response.headers["X-Cache"] = "MISS"
-
-    return StatsResponse(
-        total_complaints=0,
-        by_category=[
-            CategoryStats(category="water", count=0),
-            CategoryStats(category="electricity", count=0),
-            CategoryStats(category="sanitation", count=0),
-            CategoryStats(category="roads", count=0),
-            CategoryStats(category="streetlights", count=0),
-            CategoryStats(category="other", count=0),
-        ],
-        by_priority=[
-            PriorityStats(priority="high", count=0),
-            PriorityStats(priority="normal", count=0),
-            PriorityStats(priority="low", count=0),
-        ],
-    )
+    response.headers["X-Cache"] = "HIT" if is_hit else "MISS"
+    return stats_dto

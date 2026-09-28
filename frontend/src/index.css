@@ -1,28 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
 @import 'react-quill-new/dist/quill.snow.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── Base Reset ──────────────────────────────────────────────────────────── */
 :root {
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
+html,
 body {
+  height: 100%;
   margin: 0;
-  min-height: 100vh;
   background-color: #f8fafc;
   color: #0f172a;
 }
 
-/* Custom modern scrollbars */
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Custom Scrollbars ───────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -35,7 +43,7 @@ body {
   background: #94a3b8;
 }
 
-/* Custom styling for Quill Editor */
+/* ── Quill Editor Styling ────────────────────────────────────────────────── */
 .quill-wrapper .ql-toolbar.ql-snow {
   border: 1px solid #e2e8f0;
   border-top-left-radius: 0.75rem;
@@ -50,7 +58,7 @@ body {
   border-bottom-left-radius: 0.75rem;
   border-bottom-right-radius: 0.75rem;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.9375rem;
   min-height: 140px;
   background: #ffffff;
 }
@@ -67,7 +75,13 @@ body {
   font-size: 0.9rem;
 }
 
-/* Glassmorphism helpers */
+/* Focus ring for quill */
+.quill-wrapper .ql-container.ql-snow:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+/* ── Glassmorphism Helpers ───────────────────────────────────────────────── */
 .glass-panel {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
@@ -80,4 +94,17 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+/* Ensure sidebar always stretches full height of its parent flex container */
+aside.sidebar-stretch {
+  min-height: 100%;
+}
+
+/* ── Utility: smooth ring on focus ──────────────────────────────────────── */
+@layer utilities {
+  .ring-focus {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500;
+  }
 }

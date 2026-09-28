@@ -40,6 +40,8 @@ COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 COPY --chown=appuser:appuser alembic.ini .
 COPY --chown=appuser:appuser alembic/ ./alembic/
 COPY --chown=appuser:appuser app/ ./app/
+COPY --chown=appuser:appuser entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
 USER appuser
 
@@ -48,4 +50,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
 
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

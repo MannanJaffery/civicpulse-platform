@@ -1,104 +1,100 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import {
-  PlusCircle,
-  LayoutDashboard,
-  BarChart3,
-  Compass,
-} from 'lucide-react';
+import { Navbar } from './components/Navbar';
 import Submit from './pages/Submit';
 import Dashboard from './pages/Dashboard';
 import Stats from './pages/Stats';
 import { Landing } from './pages/Landing';
 
+export type MainTab = 'landing' | 'submit' | 'dashboard' | 'stats';
+export type DashboardSubView = 'dashboard' | 'complaints' | 'monitoring';
+
+/** Derive the initial tab from the current browser URL (runs once before React paint) */
+function getTabFromPath(): { tab: MainTab; subView: DashboardSubView } {
+  const path = window.location.pathname.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+  const params = new URLSearchParams(window.location.search);
+
+  const queryTab = params.get('tab') as MainTab | null;
+  const queryView = params.get('view') as DashboardSubView | null;
+
+  if (queryTab && ['landing', 'submit', 'dashboard', 'stats'].includes(queryTab)) {
+    const sv: DashboardSubView =
+      queryView && ['dashboard', 'complaints', 'monitoring'].includes(queryView)
+        ? (queryView as DashboardSubView)
+        : 'dashboard';
+    return { tab: queryTab, subView: sv };
+  }
+
+  if (path.includes('/dashboard/complaints') || hash.includes('/complaints')) {
+    return { tab: 'dashboard', subView: 'complaints' };
+  }
+  if (path.includes('/dashboard/monitoring') || hash.includes('/monitoring')) {
+    return { tab: 'dashboard', subView: 'monitoring' };
+  }
+  if (path.includes('/dashboard') || hash.includes('/dashboard')) {
+    return { tab: 'dashboard', subView: 'dashboard' };
+  }
+  if (path.includes('/submit') || path.includes('/report') || hash.includes('/submit')) {
+    return { tab: 'submit', subView: 'dashboard' };
+  }
+  if (path.includes('/stats') || path.includes('/telemetry') || hash.includes('/stats')) {
+    return { tab: 'stats', subView: 'dashboard' };
+  }
+  if (path === '/portal' || path === '/landing' || path.startsWith('/portal') || path.startsWith('/landing') || hash.includes('/landing')) {
+    return { tab: 'landing', subView: 'dashboard' };
+  }
+  // Default: show Submit page (preserves App.test.tsx: 'renders Submit view by default')
+  return { tab: 'submit', subView: 'dashboard' };
+}
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'landing' | 'submit' | 'dashboard' | 'stats'>('submit');
+  const initial = getTabFromPath();
+  const [activeTab, setActiveTab] = useState<MainTab>(initial.tab);
+  const [dashboardSubView, setDashboardSubView] = useState<DashboardSubView>(initial.subView);
+
+  // Keep state in sync when user navigates with browser back/forward
+  useEffect(() => {
+    const onPop = () => {
+      const { tab, subView } = getTabFromPath();
+      setActiveTab(tab);
+      setDashboardSubView(subView);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  const handleTabChange = (tab: MainTab) => {
+    setActiveTab(tab);
+    let newPath = `/${tab}`;
+    if (tab === 'landing') newPath = '/';
+    if (tab === 'dashboard' && dashboardSubView !== 'dashboard') {
+      newPath = `/dashboard/${dashboardSubView}`;
+    }
+    try {
+      window.history.pushState({ tab, subView: dashboardSubView }, '', newPath);
+    } catch {
+      // Fallback for isolated test runners (jsdom)
+    }
+  };
+
+  const handleDashboardSubViewChange = (view: DashboardSubView) => {
+    setDashboardSubView(view);
+    const newPath = view === 'dashboard' ? '/dashboard' : `/dashboard/${view}`;
+    try {
+      window.history.pushState({ tab: 'dashboard', subView: view }, '', newPath);
+    } catch {
+      // Fallback for isolated test runners (jsdom)
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
-      {/* Modern Header / Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-subtle">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo and Brand */}
-            <div
-              onClick={() => setActiveTab('landing')}
-              className="flex items-center gap-3 cursor-pointer group select-none"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-600 flex items-center justify-center shadow-gis shadow-blue-500/20 text-white font-black text-lg transition-transform group-hover:scale-105">
-                CP
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-black tracking-tight text-slate-900">
-                    CivicPulse Platform
-                  </h1>
-                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-blue-100 text-blue-800 border border-blue-200 hidden sm:inline-block">
-                    AI Municipal Triage
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 font-medium hidden md:block">
-                  CS4032 Software Construction & Operations Platform
-                </p>
-              </div>
-            </div>
+      {/* Sticky Top Navigation */}
+      <Navbar activeTab={activeTab} setActiveTab={handleTabChange} />
 
-            {/* Navigation Tabs (Including names required for test suite) */}
-            <nav className="flex items-center gap-1 sm:gap-2">
-              <button
-                onClick={() => setActiveTab('landing')}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                  activeTab === 'landing'
-                    ? 'bg-blue-50 text-blue-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
-              >
-                <Compass className="w-4 h-4 text-blue-600" />
-                <span className="hidden sm:inline">Portal</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('submit')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                  activeTab === 'submit'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Submit Complaint</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('dashboard')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                  activeTab === 'dashboard'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span>Operations Dashboard</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('stats')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                  activeTab === 'stats'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
-              >
-                <BarChart3 className="w-4 h-4" />
-                <span>Live Stats</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content Area with Animated Page Transition */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Main Content — flex-1 so Dashboard can fill remaining viewport height */}
+      <main className="flex-1 w-full flex flex-col">
         <AnimatePresence mode="wait">
           {activeTab === 'landing' && (
             <motion.div
@@ -106,9 +102,10 @@ export default function App() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
+              className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1"
             >
-              <Landing onNavigate={(tab) => setActiveTab(tab)} />
+              <Landing onNavigate={handleTabChange} />
             </motion.div>
           )}
 
@@ -118,7 +115,8 @@ export default function App() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
+              className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1"
             >
               <Submit />
             </motion.div>
@@ -127,12 +125,18 @@ export default function App() {
           {activeTab === 'dashboard' && (
             <motion.div
               key="dashboard"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              /* Full-bleed — no max-width, no horizontal padding — the sidebar + canvas own the layout */
+              className="w-full flex-1 flex flex-col"
+              style={{ minHeight: 'calc(100vh - 4rem)' }}
             >
-              <Dashboard />
+              <Dashboard
+                initialSubView={dashboardSubView}
+                onSubViewChange={handleDashboardSubViewChange}
+              />
             </motion.div>
           )}
 
@@ -142,7 +146,8 @@ export default function App() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
+              className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1"
             >
               <Stats />
             </motion.div>
@@ -150,23 +155,25 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200/80 bg-white py-6 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span className="font-semibold text-slate-700">Civic Operations</span>
-            <span>— CS4032 Software Construction & Design</span>
+      {/* Footer — only shows outside dashboard */}
+      {activeTab !== 'dashboard' && (
+        <footer className="border-t border-slate-200/80 bg-white py-5 mt-auto">
+          <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span className="font-semibold text-slate-700">Civic Operations</span>
+              <span>— CS4032 Software Construction &amp; Design</span>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] text-slate-400">
+              <span>FastAPI + Pydantic v2</span>
+              <span>•</span>
+              <span>React 18 + Vite + Tailwind</span>
+              <span>•</span>
+              <span>Multi-Tier AI Triage</span>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-[11px] text-slate-400">
-            <span>FastAPI + Pydantic v2</span>
-            <span>•</span>
-            <span>React 18 + Vite + Tailwind</span>
-            <span>•</span>
-            <span>Multi-Tier AI Triage</span>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

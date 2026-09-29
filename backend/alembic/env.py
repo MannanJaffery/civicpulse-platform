@@ -1,8 +1,11 @@
 import os
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+
+from sqlalchemy import engine_from_config, pool
+
+import app.models  # noqa: F401
 from alembic import context
+from app.db import Base
 
 # Alembic Config object
 config = context.config
@@ -11,7 +14,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Target metadata for 'autogenerate' support
-target_metadata = None
+target_metadata = Base.metadata
 
 # Override sqlalchemy.url with environment variable if present
 db_url = os.getenv("DATABASE_URL")
@@ -40,9 +43,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

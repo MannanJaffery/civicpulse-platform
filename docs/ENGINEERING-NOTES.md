@@ -7,7 +7,7 @@ This document answers the eight mandatory engineering questions with precise ref
 ## 1. Differences Between Laptop and CI Runner & Exact Lines Freezing Each
 
 1. **Operating System & Architecture**:
-   - *Issue*: Local machine may run Windows/macOS with varying libc / architectures, whereas CI runs Linux.
+   - *Issue*: Local machine may run Windows/macOS with varying libc / architectures, whereas CI runs Linux x86_64.
    - *Freezing Line*: [backend/Dockerfile](file:///backend/Dockerfile#L1) (`FROM python:3.12-slim`) and [frontend/Dockerfile](file:///frontend/Dockerfile#L1) (`FROM node:22-alpine`).
 2. **Deterministic Python & Node Dependencies**:
    - *Issue*: Floating dependency versions (`latest`) can cause non-deterministic builds.
@@ -29,7 +29,7 @@ This document answers the eight mandatory engineering questions with precise ref
 ## 3. Guaranteeing Build-Once-Deploy-Many
 
 - **Frontend Runtime Config**: The frontend container serves static assets via Nginx and proxies `/api` calls directly to the backend service without embedding absolute URLs into JavaScript bundles during build time.
-- **Exact Line**: [frontend/nginx.conf](file:///frontend/nginx.conf) (`location /api/ { proxy_pass http://backend:8000; }`).
+- **Exact Line*: [frontend/nginx.conf](file:///frontend/nginx.conf) (`location /api/ { proxy_pass http://backend:8000; }`).
 - **What breaks without it**: Baking `VITE_API_URL` during `npm run build` would produce an image tied to a single domain, requiring separate Docker builds for every environment (dev, staging, prod).
 
 ---
@@ -66,8 +66,41 @@ This document answers the eight mandatory engineering questions with precise ref
 
 ---
 
-## 8. The Failure Incident & Resolution
+## 8. Failure Incidents & Resolutions
 
-- **Symptoms**: (To be recorded during active implementation and testing of the application).
-- **Initial Wrong Assumption**: ...
-- **Actual Cause & Fix**: ...
+### Incident A: LLM Provider Unhandled Outage & SQLite UUID Translation
+- **Symptoms**: `pytest tests/test_triage.py` raised unhandled `ConnectionError: Simulated remote LLM outage 503` causing HTTP 500 status on `POST /api/complaints`, and SQLite tests raised `AttributeError: 'int' object has no attribute 'replace'` during seed tests.
+- **Initial Wrong Assumption**: We initially assumed provider-level internal try/except inside `LLMTriage` was sufficient to catch all errors, and that PostgreSQL `UUID` dialect would map transparently to in-memory SQLite during hermetic test runs.
+- **Actual Cause & Fix**:
+  1. If an external or injected provider raised an unhandled exception before returning a `TriageResult`, `ComplaintService` did not intercept it. We updated [backend/app/services/complaint_service.py](file:///backend/app/services/complaint_service.py) with a service-level defensive try/except block that catches all provider exceptions, logs a structured `WARNING` with provider metadata, and falls back to `RuleBasedTriage()` with `triaged_by="rules:fallback"`.
+  2. For database models, we switched to SQLAlchemy 2.0's universal `Uuid(as_uuid=True)` in [backend/app/models.py](file:///backend/app/models.py), ensuring native PostgreSQL UUID in production and seamless string/binary mapping in SQLite test fixtures.
+
+### Incident B: Container Startup Race & Missing Database Tables (`UndefinedTable: relation "complaints" does not exist`)
+- **Symptoms**: `POST /api/complaints` threw `sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedTable) relation "complaints" does not exist` in Docker Compose logs.
+- **Initial Wrong Assumption**: Assumed the PostgreSQL container volume would inherit pre-migrated schema automatically without an explicit migration runner in the container lifecycle.
+- **Actual Cause & Fix**:
+  1. The backend application started `uvicorn` before Alembic migrations were applied to the newly provisioned PostgreSQL instance. Because CivicPulse strictly prohibits runtime DDL (`Base.metadata.create_all()`), the `complaints` table was absent.
+  2. Implemented [backend/entrypoint.sh](file:///backend/entrypoint.sh) which runs `alembic upgrade head` and idempotent seeding `python -m app.seed` before starting `uvicorn`. Updated [backend/Dockerfile](file:///backend/Dockerfile) to execute via this entrypoint script.
+  3. Added container execution fallback command in [docs/RUNBOOK.md](file:///docs/RUNBOOK.md) for manual migration trigger: `docker compose exec backend alembic upgrade head`.
+
+---
+
+## 9. Database Indexing Justification
+
+1. **`ix_complaints_status_priority` on `(status, priority)`**:
+   - *Query Served*: `GET /api/complaints?status=open&priority=high` on the operations dashboard queue. Operators constantly filter by unresolved status and order by highest priority. The composite index enables index-only/index-range scans without full table scans.
+2. **`ix_complaints_created_at` on `created_at`**:
+   - *Query Served*: `GET /api/complaints?page=1&page_size=20` (ordered by `desc(created_at)`), serving pagination of incoming complaints and time-window analytics.
+
+---
+
+## 10. Cache & Rate Limiting (Redis Dual-Role)
+
+1. **Read-Through Stats Cache (`/api/stats`)**:
+   - *Strategy*: 30s TTL with explicit invalidation on every complaint creation or status change.
+   - *Why both TTL and Invalidation?*: Explicit invalidation guarantees freshness on new writes; TTL acts as a safety ceiling against orphaned cache entries in distributed nodes.
+2. **Distributed Rate Limiter (`POST /api/complaints`)**:
+   - *Strategy*: Fixed-window key in Redis (`ratelimit:<client_ip>:<window_bucket>`).
+   - *Why Distributed?*: In-process rate limiting fails when the HPA scales the backend to $N$ pods (permitting $N \times$ quota). A centralized Redis limiter enforces global quotas across all replicas.
+3. **Redis AOF Persistence on Named Volume**:
+   - *Justification*: Although cache data can theoretically be reconstructed, rate limiting state and content-hash inference caches protect upstream LLM quotas and costs across pod restarts.

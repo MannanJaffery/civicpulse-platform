@@ -55,7 +55,7 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
           className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto mt-6 leading-relaxed"
         >
           CivicPulse replaces broken dropdowns with structured AI language models, resilient
-          fallbacks, and a real-time GIS Operations Hub for city infrastructure.
+          fallbacks, and a real-time Operations Hub for city infrastructure.
         </motion.p>
 
         {/* CTAs */}
@@ -67,17 +67,17 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
         >
           <button
             onClick={() => onNavigate('submit')}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-gis shadow-blue-600/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-md shadow-blue-600/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>Report an Incident</span>
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
             onClick={() => onNavigate('dashboard')}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-bold text-sm shadow-subtle flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
           >
             <BarChart3 className="w-4 h-4 text-blue-600" />
-            <span>Open GIS Operations Hub</span>
+            <span>Open Operations Hub</span>
           </button>
         </motion.div>
 
@@ -154,7 +154,7 @@ export const Landing: React.FC<LandingProps> = ({ onNavigate }) => {
             <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-5 font-bold">
               <Layers className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-2">GIS Operations Hub</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Operations Hub</h3>
             <p className="text-sm text-slate-600 leading-relaxed mb-4">
               Real-time monitoring console with state machine controls (open → in_progress → resolved
               / rejected) that strictly enforce lifecycle transitions.

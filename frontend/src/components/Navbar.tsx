@@ -239,7 +239,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
 
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="font-semibold text-slate-600">Liveness Probe (/health)</span>
+                <span className="font-semibold text-slate-600">System Liveness (Heartbeat)</span>
                 <span className="font-mono font-bold text-emerald-600 flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   200 OK
@@ -247,7 +247,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               </div>
 
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="font-semibold text-slate-600">Readiness Probe (/ready)</span>
+                <span className="font-semibold text-slate-600">Cluster Readiness (Health Gate)</span>
                 <span
                   className={`font-mono font-bold flex items-center gap-1 ${isOnline ? 'text-emerald-600' : 'text-red-600'
                     }`}

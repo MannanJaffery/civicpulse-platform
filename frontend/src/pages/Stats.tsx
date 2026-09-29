@@ -290,8 +290,8 @@ const Stats: FC = () => {
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-mono bg-slate-800 px-3 py-1 rounded-full border border-slate-700 text-slate-300">
-                  GET /api/meta/providers
+                <span className="text-xs font-semibold bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 text-cyan-300">
+                  Live Provider Telemetry
                 </span>
               </div>
 

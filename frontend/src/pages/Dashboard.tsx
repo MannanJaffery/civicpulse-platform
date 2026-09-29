@@ -179,18 +179,18 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
   // ─── View labels for the header ───────────────────────────────────────────
   const viewMeta = {
     dashboard: {
-      title: 'GIS Operations Overview',
-      subtitle: 'Real-time telemetry, municipal trends & service levels',
+      title: 'Operations Overview',
+      subtitle: 'Real-time metrics, municipal trends, and service SLA performance',
       icon: <LayoutDashboard className="w-5 h-5 text-blue-600" />,
     },
     complaints: {
-      title: 'Complaints Management Center',
-      subtitle: 'Filtered incident queue & state transition workflows',
+      title: 'Complaints Management',
+      subtitle: 'Incident queue, triage classification, and status transitions',
       icon: <ClipboardList className="w-5 h-5 text-blue-600" />,
     },
     monitoring: {
-      title: 'Live Monitoring & Telemetry',
-      subtitle: 'Infrastructure health, LLM latency & cache telemetry',
+      title: 'System Health & Diagnostics',
+      subtitle: 'Service health probes, AI model telemetry, and cache performance',
       icon: <Radio className="w-5 h-5 text-blue-600" />,
     },
   };
@@ -248,8 +248,8 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
       <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
 
         {/* ── Top Operations Header Bar ── */}
-        <header className="bg-white border-b border-slate-200/80 shadow-sm sticky top-16 z-30">
-          <div className="px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <header className="bg-white border-b border-slate-200/80 shadow-xs">
+          <div className="px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 
             {/* Left: mobile toggle + breadcrumb */}
             <div className="flex items-center gap-3">
@@ -270,8 +270,8 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
                     <h1 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight leading-tight truncate">
                       {currentMeta.title}
                     </h1>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0 hidden sm:inline-block">
-                      Live Operations
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0 hidden sm:inline-block">
+                      Live
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-400 font-medium hidden sm:block">{currentMeta.subtitle}</p>
@@ -310,7 +310,7 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
                 </button>
               )}
 
-              {/* X-Cache badge */}
+              {/* Cache status badge */}
               {cacheHit !== null && (
                 <span
                   data-testid="cache-badge"
@@ -437,8 +437,8 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
               transition={{ duration: 0.2 }}
               className="space-y-6"
             >
-              {/* KPI Metric Row */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {/* Top 4 KPI Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <MetricCard
                   icon={<Clock className="w-4 h-4" />}
                   iconBgColor="bg-blue-50"
@@ -446,7 +446,7 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
                   title="Open"
                   subtitle="Awaiting action"
                   value={stats?.by_status[Status.open] ?? total}
-                  badgeText="+70%"
+                  badgeText="Pending"
                   badgeType="danger"
                   accentColor="bg-blue-500"
                   delay={0.05}
@@ -458,7 +458,7 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
                   title="In Progress"
                   subtitle="Being handled"
                   value={stats?.by_status[Status.in_progress] ?? 0}
-                  badgeText="+20%"
+                  badgeText="Active"
                   badgeType="info"
                   accentColor="bg-amber-500"
                   delay={0.1}
@@ -468,9 +468,9 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
                   iconBgColor="bg-emerald-50"
                   iconColor="text-emerald-600"
                   title="Resolved"
-                  subtitle="Closed this period"
+                  subtitle="Closed records"
                   value={stats?.by_status[Status.resolved] ?? 0}
-                  badgeText="+1%"
+                  badgeText="Closed"
                   badgeType="success"
                   accentColor="bg-emerald-500"
                   delay={0.15}
@@ -479,7 +479,7 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
                   icon={<TrendingUp className="w-4 h-4" />}
                   iconBgColor="bg-slate-50"
                   iconColor="text-slate-600"
-                  title="Total"
+                  title="Total Intake"
                   subtitle="All time intake"
                   value={stats?.total ?? total}
                   badgeText="All time"
@@ -487,17 +487,20 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
                   accentColor="bg-slate-400"
                   delay={0.2}
                 />
-                {/* Service Gauge (spans 2 cols on xl) */}
-                <div className="col-span-2 sm:col-span-2 lg:col-span-1 xl:col-span-1">
+              </div>
+
+              {/* Middle Row: Trend Chart (2 cols) + Service SLA Gauge (1 col) */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <ComplaintsTrendChart
+                    pendingCount={stats?.by_status[Status.open] ?? 231}
+                    inProgressCount={stats?.by_status[Status.in_progress] ?? 43}
+                  />
+                </div>
+                <div className="lg:col-span-1">
                   <ServiceGauge percentage={76.5} target={75} rating={4.6} delay={0.25} />
                 </div>
               </div>
-
-              {/* Trend Chart */}
-              <ComplaintsTrendChart
-                pendingCount={stats?.by_status[Status.open] ?? 231}
-                inProgressCount={stats?.by_status[Status.in_progress] ?? 43}
-              />
 
               {/* Bottom Split: Recent Complaints + Category Breakdown */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -762,22 +765,22 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
                 <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Process Liveness (/health)
+                    Process Liveness Heartbeat
                   </span>
                   <div className="flex items-center gap-2 text-emerald-600 font-extrabold text-xl">
                     <CheckCircle2 className="w-6 h-6" />
-                    <span>200 Healthy</span>
+                    <span>Healthy (200)</span>
                   </div>
-                  <p className="text-[11px] text-slate-400">Process alive — zero DB dependency</p>
+                  <p className="text-[11px] text-slate-400">Process alive with zero DB dependency</p>
                 </div>
 
                 <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Readiness Probe (/ready)
+                    Cluster Readiness Gate
                   </span>
                   <div className="flex items-center gap-2 text-emerald-600 font-extrabold text-xl">
                     <CheckCircle2 className="w-6 h-6" />
-                    <span>200 Ready</span>
+                    <span>Ready (200)</span>
                   </div>
                   <p className="text-[11px] text-slate-400">
                     PostgreSQL: <strong>{readyInfo?.database || 'connected'}</strong> &nbsp;•&nbsp;
@@ -787,11 +790,11 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
 
                 <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Redis Cache Layer
+                    Distributed Cache Layer
                   </span>
                   <div className={`flex items-center gap-2 font-extrabold text-xl ${cacheHit ? 'text-blue-600' : 'text-amber-600'}`}>
                     <Zap className="w-6 h-6" />
-                    <span>{cacheHit ? 'X-Cache: HIT' : 'X-Cache: MISS'}</span>
+                    <span>{cacheHit ? 'Cache Hit' : 'Cache Miss'}</span>
                   </div>
                   <p className="text-[11px] text-slate-400">30s TTL with write invalidation</p>
                 </div>
@@ -813,8 +816,9 @@ const Dashboard: FC<DashboardProps> = ({ initialSubView = 'dashboard', onSubView
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs font-mono bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 text-slate-300 self-start sm:self-auto">
-                      GET /api/meta/providers
+                    <span className="text-xs font-semibold bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 text-cyan-300 self-start sm:self-auto flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5" />
+                      <span>Live Telemetry Stream</span>
                     </span>
                   </div>
 

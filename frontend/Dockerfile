@@ -13,6 +13,9 @@ RUN npm run build
 # Stage 2: Serve via Nginx Alpine
 FROM nginx:1.27-alpine AS runner
 
+# Upgrade OS packages to remediate known Alpine CVEs
+RUN apk update && apk upgrade --no-cache
+
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

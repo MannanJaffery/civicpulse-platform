@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   Activity,
   PlusCircle,
@@ -25,32 +25,43 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   const [showHealthModal, setShowHealthModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [probing, setProbing] = useState(false);
+  const isMountedRef = useRef(true);
 
-  const checkHealth = async () => {
+  const checkHealth = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setProbing(true);
     try {
       const readyRes = await getReady();
+      if (!isMountedRef.current) return;
       setReadyInfo(readyRes);
       setIsOnline(readyRes.status === 'ready');
     } catch {
       try {
         const healthRes = await getHealth();
+        if (!isMountedRef.current) return;
         setIsOnline(healthRes.status === 'ok');
         setReadyInfo({ status: healthRes.status, database: 'unknown', cache: 'unknown' });
       } catch {
+        if (!isMountedRef.current) return;
         setIsOnline(false);
         setReadyInfo(null);
       }
     } finally {
-      setProbing(false);
+      if (isMountedRef.current) {
+        setProbing(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
+    isMountedRef.current = true;
     checkHealth();
     const interval = setInterval(checkHealth, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      isMountedRef.current = false;
+      clearInterval(interval);
+    };
+  }, [checkHealth]);
 
   const handleNavClick = (tab: 'landing' | 'submit' | 'dashboard' | 'stats') => {
     setActiveTab(tab);

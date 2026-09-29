@@ -161,25 +161,17 @@ jobs:
           tags: civicpulse-frontend:scan
           load: true
 
+      - name: Install Trivy Security Scanner
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
       - name: Run Trivy on Backend Image
-        uses: aquasecurity/trivy-action@v0.28.0
-        with:
-          image-ref: civicpulse-backend:scan
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "HIGH,CRITICAL"
+        run: |
+          trivy image --format table --exit-code 1 --ignore-unfixed --vuln-type os,library --severity HIGH,CRITICAL civicpulse-backend:scan
 
       - name: Run Trivy on Frontend Image
-        uses: aquasecurity/trivy-action@v0.28.0
-        with:
-          image-ref: civicpulse-frontend:scan
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "HIGH,CRITICAL"
+        run: |
+          trivy image --format table --exit-code 1 --ignore-unfixed --vuln-type os,library --severity HIGH,CRITICAL civicpulse-frontend:scan
 
   manifests:
     name: Validate Kubernetes Manifests

@@ -17,10 +17,11 @@ This directory contains evidence documentation and references for CivicPulse rub
 
 ---
 
-## 3. Kubernetes HPA Autoscaling & Load Verification (Rubric H.5)
+## 3. Kubernetes HPA Autoscaling & Load Verification (Rubric H.5 & Deliverable #6)
+- Complete log and timeline chart documented in [docs/evidence/HPA-SCALING-REPORT.md](file:///docs/evidence/HPA-SCALING-REPORT.md).
 - Load test executed via `k6 run load/k6-script.js`.
 - Observed scale-out from 2 to 10 replicas upon sustained CPU threshold breach (>60%).
-- Captured replica response timeline documented in `docs/ENGINEERING-NOTES.md` §5.
+- Captured replica response timeline and lag analysis documented in `docs/ENGINEERING-NOTES.md` §5.
 
 ---
 

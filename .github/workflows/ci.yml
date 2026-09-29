@@ -167,11 +167,11 @@ jobs:
 
       - name: Run Trivy on Backend Image
         run: |
-          trivy image --format table --exit-code 1 --ignore-unfixed --vuln-type os,library --severity HIGH,CRITICAL civicpulse-backend:scan
+          trivy image --format table --exit-code 1 --ignore-unfixed --pkg-types os,library --severity HIGH,CRITICAL civicpulse-backend:scan
 
       - name: Run Trivy on Frontend Image
         run: |
-          trivy image --format table --exit-code 1 --ignore-unfixed --vuln-type os,library --severity HIGH,CRITICAL civicpulse-frontend:scan
+          trivy image --format table --exit-code 1 --ignore-unfixed --pkg-types os,library --severity HIGH,CRITICAL civicpulse-frontend:scan
 
   manifests:
     name: Validate Kubernetes Manifests

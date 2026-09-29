@@ -123,10 +123,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                     onClick={() => handleNavClick(item.id)}
                     aria-current={isActive ? 'page' : undefined}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${isActive
-                        ? item.id === 'submit' || item.id === 'dashboard'
-                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
-                          : 'bg-blue-50 text-blue-700 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      ? item.id === 'submit' || item.id === 'dashboard'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                        : 'bg-blue-50 text-blue-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       }`}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
@@ -147,10 +147,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               <button
                 onClick={() => setShowHealthModal(true)}
                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${isOnline === true
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100'
-                    : isOnline === false
-                      ? 'bg-red-50 text-red-700 border-red-200/80 hover:bg-red-100'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100'
+                  : isOnline === false
+                    ? 'bg-red-50 text-red-700 border-red-200/80 hover:bg-red-100'
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                   }`}
                 title="Click to view system health probe status"
                 aria-label="System health status"
@@ -196,10 +196,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left ${isActive
-                      ? item.id === 'submit' || item.id === 'dashboard'
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-blue-50 text-blue-700'
-                      : 'text-slate-700 hover:bg-slate-50'
+                    ? item.id === 'submit' || item.id === 'dashboard'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-blue-50 text-blue-700'
+                    : 'text-slate-700 hover:bg-slate-50'
                     }`}
                 >
                   <Icon className="w-5 h-5 shrink-0" />

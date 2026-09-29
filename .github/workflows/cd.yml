@@ -148,6 +148,11 @@ jobs:
             --selector=app.kubernetes.io/component=controller \
             --timeout=180s
 
+      - name: Install Kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
       - name: Update Kustomize Overlay with Git SHA
         run: |
           cd k8s/overlays/prod

@@ -73,9 +73,13 @@ def check_structure():
     print("[*] Running CivicPulse submission checks...")
 
     # 1. Check prohibited files
+    import subprocess
     for prohibited in PROHIBITED_FILES:
-        if (root / prohibited).exists():
-            errors.append(f"CRITICAL: Found committed secret/environment file: {prohibited} (-20 penalty!)")
+        res = subprocess.run(["git", "ls-files", prohibited], capture_output=True, text=True)
+        if res.stdout.strip():
+            errors.append(f"CRITICAL: Committed secret/environment file in Git: {prohibited} (-20 penalty!)")
+        elif (root / prohibited).exists():
+            warnings.append(f"Notice: Local {prohibited} exists on disk. Verify it is gitignored before submission.")
 
     # 2. Check required files
     for req in REQUIRED_PATHS:

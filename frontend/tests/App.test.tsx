@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import App from '../src/App';
 
 vi.mock('../src/components/Navbar', () => ({
-  Navbar: ({ activeTab, setActiveTab }: any) => (
+  Navbar: ({ setActiveTab }: any) => (
     <header>
       <span>CivicPulse Platform</span>
       <button onClick={() => setActiveTab('submit')}>Submit Complaint</button>

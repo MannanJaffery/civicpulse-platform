@@ -24,6 +24,8 @@ spec:
             - containerPort: 5432
               name: postgres
           envFrom:
+            - configMapRef:
+                name: civicpulse-config
             - secretRef:
                 name: civicpulse-secret
           resources:
